@@ -9,6 +9,7 @@ public class House : MonoBehaviour
     public void TakeDamage(int damage)
     {
         health -= damage;
+        UIManager.Instance.RefreshSlider(health);
         if (health <= 0)
         {
             DestroyHouse();

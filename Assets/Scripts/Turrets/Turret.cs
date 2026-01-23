@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Linq;
 
 
-public class Turret : MonoBehaviour, IUpgradable, IHighlightable
+public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarget
 {
     [SerializeField] private TurretDefinition _definition;
     [SerializeField] private Transform[] _bulletPoints;
@@ -132,5 +132,10 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable
     public void Highlight(bool state)
     {
         outline.enabled = state;
+    }
+
+    public CrosshairType GetCrosshairType()
+    {
+        return CrosshairType.Hammer;
     }
 }

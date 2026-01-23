@@ -6,14 +6,20 @@ using System;
 public class Enemy : MonoBehaviour
 {
     [SerializeField] private float health = 40f;
+    [SerializeField] private GameObject _cogPrefab;
     UnityEngine.AI.NavMeshAgent agent;
     private bool isAttacking = false;
     public Action OnDeath;
     private Transform target;
+    private int _randomAmountOfCogs;
+    [SerializeField] private float _cogDropForce = 2f;
+
 
     void Awake()
     {
         agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        _randomAmountOfCogs = UnityEngine.Random.Range(1,3);
+        
     }
 
     void Update()
@@ -42,6 +48,22 @@ public class Enemy : MonoBehaviour
     public void Die()
     {
         OnDeath?.Invoke();
+        for (int i = 0; i < _randomAmountOfCogs; i++)
+        {
+            GameObject cog = Instantiate(_cogPrefab, transform.position, Quaternion.identity);
+
+            Rigidbody _cogRB;
+            _cogRB = _cogPrefab.GetComponent<Rigidbody>();
+
+            if (_cogRB != null)
+            {
+                Vector3 randomDir = UnityEngine.Random.onUnitSphere;
+                randomDir.y = Mathf.Abs(randomDir.y);
+
+                _cogRB.AddForce(randomDir * _cogDropForce, ForceMode.Impulse);
+            }
+        }
+        
         Destroy(gameObject);
     }
 

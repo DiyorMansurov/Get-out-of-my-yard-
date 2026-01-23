@@ -17,10 +17,14 @@ public class Player : MonoBehaviour
     private int _placementLayerMask;
     private IHighlightable _currentHighlight;
     [SerializeField] private float _interactionDistance = 20f; 
+    private RaycastHit _cachedHit;
+    private bool _hasHit;
+    private int _buildSurface;
 
     private void Awake() {
         _input = new PlayerInputActions();
         _placementLayerMask = ~LayerMask.GetMask("Ground", "Preview");
+        _buildSurface = LayerMask.GetMask("Ground");
     }
 
     private void OnEnable() {
@@ -31,22 +35,21 @@ public class Player : MonoBehaviour
     }
     private void OnDisable() {
         _input.Player.Disable();
-
-        _input.Player.Interact.performed -= ctx => RaycastInteract();
-        _input.Player.BuildMode.performed -= ctx => ToggleBuildMode();
-        _input.Player.RightButton.performed -= ctx => RightClick();
     }
 
     private void Update()
     {
-        if (_buildMode)
-        {
-            RaycastBuildMode();
-        }
-        else
-        {
-            RaycastHighlight();
-        }
+        RaycastInfo();
+        UpdateMoney();
+    }
+
+    public void CollectCogs(int amount)
+    {
+        _money += amount;
+    }
+    private void UpdateMoney()
+    {
+        UIManager.Instance.RefreshMoneyAmount(_money);
     }
 
     private void RightClick()
@@ -56,8 +59,6 @@ public class Player : MonoBehaviour
             ToggleBuildMode();
         }
     }
-
-  
 
     private void ToggleBuildMode()
     {
@@ -81,22 +82,58 @@ public class Player : MonoBehaviour
         return !Physics.CheckSphere(position, radius, _placementLayerMask);
     }
 
-    private void RaycastBuildMode()
+    private void RaycastInfo()
     {
         Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, _interactionDistance, LayerMask.GetMask("Ground")))
+        
+        if (_buildMode)
         {
-            if (_buildMode)
-            {
-                _ghostObject.transform.position = hit.point;
-                _ghostObject.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+            _hasHit = Physics.Raycast(ray, out _cachedHit, _interactionDistance, _buildSurface);
+            HandleBuildMode(_cachedHit);
 
-                bool isValidPlacement = CheckValidPlacement(hit.point);
-                SetPreviewMaterial(isValidPlacement);
+        }
+        else
+        {
+            _hasHit = Physics.Raycast(ray, out _cachedHit, _interactionDistance);
+            if (_hasHit)
+            {
+                HandleHighlight(_cachedHit);
+                HandleCrosshairChange(_cachedHit);
+            }
+            else
+            {
+                HighlightObject(null);
             }
         }
+    }
+    private void HandleBuildMode(RaycastHit hit)
+    {
+        if (_buildMode)
+        {
+            _ghostObject.transform.position = hit.point;
+            _ghostObject.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+
+            bool isValidPlacement = CheckValidPlacement(hit.point);
+            SetPreviewMaterial(isValidPlacement);
+        }
+
+    }
+
+    private void HandleCrosshairChange(RaycastHit hit)
+    {
+        ICrosshairTarget target = hit.collider.GetComponentInParent<ICrosshairTarget>();
+        if (target == null)
+        {
+            target = hit.collider.GetComponentInChildren<ICrosshairTarget>();
+        }
+
+        if (target != null)
+        {
+            UIManager.Instance.CrosshairSet(target.GetCrosshairType());
+            return;
+        }
+
+        UIManager.Instance.CrosshairSet(CrosshairType.Default);
     }
 
     private void SetPreviewMaterial(bool isValid)
@@ -118,21 +155,16 @@ public class Player : MonoBehaviour
         }
     }
     
-    private void RaycastHighlight()
+    private void HandleHighlight(RaycastHit hit)
     {
-        Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
-        RaycastHit hit;
         IHighlightable newHighlight = null;
-
-        if (Physics.Raycast(ray, out hit, _interactionDistance))
+            
+        newHighlight = hit.collider.GetComponentInParent<IHighlightable>();
+        if (newHighlight == null)
         {
-            newHighlight = hit.collider.GetComponentInParent<IHighlightable>();
-            if (newHighlight == null)
-            {
-                newHighlight = hit.collider.GetComponentInChildren<IHighlightable>();
-            }
-            HighlightObject(newHighlight);
+            newHighlight = hit.collider.GetComponentInChildren<IHighlightable>();
         }
+        HighlightObject(newHighlight);
     }
     private void RaycastInteract()
     {
@@ -165,7 +197,7 @@ public class Player : MonoBehaviour
             }
         } else
         {
-            if (Physics.Raycast(ray, out hit, _interactionDistance, LayerMask.GetMask("Ground")) && CheckValidPlacement(hit.point) && _money >= _definition.tiers[0].cost)
+            if (Physics.Raycast(ray, out hit, _interactionDistance, _buildSurface) && CheckValidPlacement(hit.point) && _money >= _definition.tiers[0].cost)
             {
                 Instantiate(_realTurretPrefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal));
                 _money -= _definition.tiers[0].cost;
@@ -175,11 +207,14 @@ public class Player : MonoBehaviour
 
     private void HighlightObject(IHighlightable newHighlight)
     {
-        if (_currentHighlight != null && _currentHighlight != newHighlight)
+        MonoBehaviour mb = _currentHighlight as MonoBehaviour;
+
+        if (_currentHighlight != null && _currentHighlight != newHighlight && mb != null)
         {
             _currentHighlight.Highlight(false);
         }
 
+        _currentHighlight = null;
 
         if (newHighlight != null && newHighlight != _currentHighlight)
         {
