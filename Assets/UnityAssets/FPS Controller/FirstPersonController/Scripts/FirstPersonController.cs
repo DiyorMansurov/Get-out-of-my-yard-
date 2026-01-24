@@ -71,6 +71,7 @@ namespace StarterAssets
 		private CharacterController _controller;
 		private StarterAssetsInputs _input;
 		private GameObject _mainCamera;
+		private bool _playerInputEnabled = true;
 
 		private const float _threshold = 0.01f;
 
@@ -122,6 +123,11 @@ namespace StarterAssets
 			CameraRotation();
 		}
 
+		public void TogglePlayerinput()
+		{
+			_playerInputEnabled = !_playerInputEnabled;
+		}
+
 		private void GroundedCheck()
 		{
 			// set sphere position, with offset
@@ -131,6 +137,7 @@ namespace StarterAssets
 
 		private void CameraRotation()
 		{
+			if (!_playerInputEnabled) return;
 			// if there is an input
 			if (_input.look.sqrMagnitude >= _threshold)
 			{
@@ -153,6 +160,7 @@ namespace StarterAssets
 
 		private void Move()
 		{
+			if (!_playerInputEnabled) return;
 			// set target speed based on move speed, sprint speed and if sprint is pressed
 			float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 

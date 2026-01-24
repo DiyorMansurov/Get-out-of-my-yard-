@@ -7,11 +7,13 @@ public class Bullet : MonoBehaviour
     [SerializeField] private float _speed = 10f;
     private int _damage;
     private Transform _target;
+    private Enemy _enemy;
 
-    public void Initialize(Transform target, int damage)
+    public void Initialize(Transform target, int damage, Enemy enemy)
     {
         _target = target;
         _damage = damage;
+        _enemy = enemy;
     }
 
     void Update()
@@ -36,10 +38,9 @@ public class Bullet : MonoBehaviour
 
     private void HitTarget()
     {
-        Enemy enemy = _target.GetComponent<Enemy>();
-        if (enemy != null)
+        if (_enemy != null)
         {
-            enemy.TakeDamage(_damage);
+            _enemy.TakeDamage(_damage);
         }
         Destroy(gameObject);
     }

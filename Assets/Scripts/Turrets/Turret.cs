@@ -13,7 +13,7 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
     private Outline outline;
     private float _fireCooldown = 0f;
 
-    Transform closestTarget = null;
+    private Transform closestTarget = null;
 
     TurretTierData CurrentTierData => _definition.tiers[_currentTier];
     private void Update() {
@@ -72,7 +72,9 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
                 {
                     GameObject bullet = Instantiate(CurrentTierData.bulletPrefab, point.position, Quaternion.identity);
                     Bullet bulletComponent = bullet.GetComponent<Bullet>();
-                    bulletComponent.Initialize(closestTarget, CurrentTierData.damage);
+                    Enemy enemyScript = closestTarget.GetComponent<Enemy>();
+                    Transform AimPoint = enemyScript.GetAimPoint();
+                    bulletComponent.Initialize(AimPoint, CurrentTierData.damage, enemyScript);
                     _fireCooldown = 1f / CurrentTierData.fireRate;
                 }
             }

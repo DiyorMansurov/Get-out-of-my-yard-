@@ -20,6 +20,7 @@ public class Player : MonoBehaviour
     private RaycastHit _cachedHit;
     private bool _hasHit;
     private int _buildSurface;
+  
 
     private void Awake() {
         _input = new PlayerInputActions();
@@ -63,6 +64,7 @@ public class Player : MonoBehaviour
     private void ToggleBuildMode()
     {
         _buildMode = !_buildMode;
+        UIManager.Instance.ToggleCrosshair(_buildMode);
         if (_buildMode)
         {
             _ghostObject = Instantiate(_turretPrefab, Vector3.zero, Quaternion.identity);

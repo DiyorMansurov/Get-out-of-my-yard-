@@ -8,8 +8,9 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private GameObject _enemyPrefab;
     [SerializeField] private float _spawnInterval = 5f;
     [SerializeField] private int _maxAliveEnemies = 10;
+    [SerializeField] private House _house;
 
-    [SerializeField] private Transform target;
+    [SerializeField] private Transform[] targets;
 
     private float _timer;
     private float _aliveEnemies;
@@ -32,7 +33,8 @@ public class SpawnManager : MonoBehaviour
         GameObject enemySpawned = Instantiate(_enemyPrefab, spawn.position, Quaternion.identity);
         Enemy enemy = enemySpawned.GetComponent<Enemy>();
         
-        enemy.SetTarget(target);
+        enemy.SetTarget(targets);
+        enemy.SetHouse(_house);
         enemy.OnDeath += HandleEnemyDeath;
 
         _aliveEnemies++;

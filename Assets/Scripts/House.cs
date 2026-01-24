@@ -10,6 +10,7 @@ public class House : MonoBehaviour
     {
         health -= damage;
         UIManager.Instance.RefreshSlider(health);
+        UIManager.Instance.HouseAnim();
         if (health <= 0)
         {
             DestroyHouse();
@@ -18,6 +19,6 @@ public class House : MonoBehaviour
 
     private void DestroyHouse()
     {
-        Destroy(gameObject);
+        Destroy(transform.parent.gameObject);
     }
 }

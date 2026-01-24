@@ -9,9 +9,12 @@ public class Enemy : MonoBehaviour
     [SerializeField] private GameObject _cogPrefab;
     UnityEngine.AI.NavMeshAgent agent;
     private bool isAttacking = false;
+    private House _house;
     public Action OnDeath;
-    private Transform target;
+    private Transform _target;
     private int _randomAmountOfCogs;
+    private Animator _anim;
+    [SerializeField] private Transform _AimPoint;
     [SerializeField] private float _cogDropForce = 2f;
 
 
@@ -19,22 +22,42 @@ public class Enemy : MonoBehaviour
     {
         agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         _randomAmountOfCogs = UnityEngine.Random.Range(1,3);
-        
+        _anim = GetComponent<Animator>();
+        _anim.SetBool("IsRunning", true);
     }
 
     void Update()
     {
         DistanceCheck();
     }
-
-    public void SetTarget(Transform targetReceived)
+    public void SetTarget(Transform[] targetsReceived)
     {
-        target = targetReceived;
+        float closestDistance = Mathf.Infinity;
 
-        if (target != null)
+        foreach (var target in targetsReceived)
         {
-            agent.SetDestination(target.position);
+            float distance = (target.position - transform.position).sqrMagnitude;
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                _target = target;
+            }
         }
+
+        if (_target != null)
+        {
+            agent.SetDestination(_target.position);
+        }
+    }
+
+    public Transform GetAimPoint()
+    {
+        return _AimPoint;
+    }
+
+    public void SetHouse(House house)
+    {
+        _house = house;
     }
     public void TakeDamage(float damage)
     {
@@ -50,7 +73,7 @@ public class Enemy : MonoBehaviour
         OnDeath?.Invoke();
         for (int i = 0; i < _randomAmountOfCogs; i++)
         {
-            GameObject cog = Instantiate(_cogPrefab, transform.position, Quaternion.identity);
+            GameObject cog = Instantiate(_cogPrefab, _AimPoint.position, Quaternion.identity);
 
             Rigidbody _cogRB;
             _cogRB = _cogPrefab.GetComponent<Rigidbody>();
@@ -71,14 +94,18 @@ public class Enemy : MonoBehaviour
     {
         if (isAttacking) return;
 
-        if (target != null)
+        if (_target != null)
         {
-            float distance = Vector3.Distance(transform.position, target.position);
+            float distance = Vector3.Distance(transform.position, _target.position);
             if (distance <= 2f)
             {
-                House house = target.GetComponent<House>();
+                House house = _house.GetComponent<House>();
                 if (house != null)
-                {
+                {     
+                    agent.isStopped = true;
+                    agent.velocity = Vector3.zero;
+
+                    _anim.SetBool("IsRunning", false);
                     StartCoroutine(AttackHouse(house));
                     isAttacking = true;
                 }
@@ -90,6 +117,7 @@ public class Enemy : MonoBehaviour
     {
         while (house != null)
         {
+            _anim.SetTrigger("Attack");
             house.TakeDamage(10);
             yield return new WaitForSeconds(3f);
         }
