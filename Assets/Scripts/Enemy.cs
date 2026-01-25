@@ -2,11 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UI;
 
 public class Enemy : MonoBehaviour
 {
-    [SerializeField] private float health = 40f;
+    [SerializeField] private float _health = 100f;
     [SerializeField] private GameObject _cogPrefab;
+    [SerializeField] private GameObject _pearlPrefab;
     UnityEngine.AI.NavMeshAgent agent;
     private bool isAttacking = false;
     private House _house;
@@ -14,21 +16,54 @@ public class Enemy : MonoBehaviour
     private Transform _target;
     private int _randomAmountOfCogs;
     private Animator _anim;
+    private bool _dropsPearl;
+    [SerializeField] private int _chanceToDropPearl;
     [SerializeField] private Transform _AimPoint;
     [SerializeField] private float _cogDropForce = 2f;
+
+
+    [SerializeField] private Slider _hpSlider;
 
 
     void Awake()
     {
         agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         _randomAmountOfCogs = UnityEngine.Random.Range(1,3);
+        CheckIfDropsPearl();
         _anim = GetComponent<Animator>();
         _anim.SetBool("IsRunning", true);
+        _hpSlider.maxValue = _health;
     }
 
     void Update()
     {
         DistanceCheck();
+        HealthSliderAnimation();
+        RotateTowardsPlayer(_hpSlider.transform, Camera.main.transform);
+    }
+
+    private void RotateTowardsPlayer(Transform uiElement, Transform playerTransform)
+    {
+        Vector3 direction = uiElement.position - playerTransform.position;
+        direction.y = 0;
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            uiElement.rotation = Quaternion.Slerp(uiElement.rotation, targetRotation, Time.deltaTime * 5f);
+        }
+    }
+
+    private void HealthSliderAnimation()
+    {
+        _hpSlider.value = Mathf.Lerp(_hpSlider.value,_health , 5f * Time.deltaTime);
+    }
+
+    private void CheckIfDropsPearl()
+    {
+        if (UnityEngine.Random.Range(1,_chanceToDropPearl) == _chanceToDropPearl)
+        {
+            _dropsPearl = true;
+        }
     }
     public void SetTarget(Transform[] targetsReceived)
     {
@@ -61,8 +96,8 @@ public class Enemy : MonoBehaviour
     }
     public void TakeDamage(float damage)
     {
-        health -= damage;
-        if (health <= 0)
+        _health -= damage;
+        if (_health <= 0)
         {
             Die();
         }
@@ -71,12 +106,18 @@ public class Enemy : MonoBehaviour
     public void Die()
     {
         OnDeath?.Invoke();
+        DropLoot();
+        Destroy(gameObject);
+    }
+
+    private void DropLoot()
+    {
         for (int i = 0; i < _randomAmountOfCogs; i++)
         {
             GameObject cog = Instantiate(_cogPrefab, _AimPoint.position, Quaternion.identity);
 
             Rigidbody _cogRB;
-            _cogRB = _cogPrefab.GetComponent<Rigidbody>();
+            _cogRB = cog.GetComponent<Rigidbody>();
 
             if (_cogRB != null)
             {
@@ -86,8 +127,22 @@ public class Enemy : MonoBehaviour
                 _cogRB.AddForce(randomDir * _cogDropForce, ForceMode.Impulse);
             }
         }
-        
-        Destroy(gameObject);
+
+        if (_dropsPearl)
+        {
+            GameObject pearl = Instantiate(_pearlPrefab, _AimPoint.position, Quaternion.identity);
+
+            Rigidbody _pearlRB;
+            _pearlRB = pearl.GetComponent<Rigidbody>();
+
+            if (_pearlRB != null)
+            {
+                Vector3 randomDir = UnityEngine.Random.onUnitSphere;
+                randomDir.y = Mathf.Abs(randomDir.y);
+
+                _pearlRB.AddForce(randomDir * _cogDropForce, ForceMode.Impulse);
+            }
+        }
     }
 
     private void DistanceCheck()

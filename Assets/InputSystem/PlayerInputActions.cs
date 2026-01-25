@@ -53,6 +53,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DestroyMode"",
+                    ""type"": ""Button"",
+                    ""id"": ""1884d76a-a3de-49a1-8dd0-fdc69e6f3c8f"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -91,8 +100,8 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""a53b666c-9782-4f9f-a3a2-8979bf3a5508"",
-                    ""path"": ""<Gamepad>/dpad/left"",
+                    ""id"": ""ad0fb391-e504-4220-9ba9-ac1955e8cd1a"",
+                    ""path"": ""<Gamepad>/dpad/right"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -108,6 +117,28 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""RightButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""05cb367f-5ba7-4842-8706-80a9477a5123"",
+                    ""path"": ""<Keyboard>/g"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DestroyMode"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b31cd3af-6853-4071-bb0e-7dfbb02a4db1"",
+                    ""path"": ""<Gamepad>/dpad/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DestroyMode"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -213,6 +244,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Interact = m_Player.FindAction("Interact", throwIfNotFound: true);
         m_Player_BuildMode = m_Player.FindAction("BuildMode", throwIfNotFound: true);
         m_Player_RightButton = m_Player.FindAction("RightButton", throwIfNotFound: true);
+        m_Player_DestroyMode = m_Player.FindAction("DestroyMode", throwIfNotFound: true);
         // Minigame
         m_Minigame = asset.FindActionMap("Minigame", throwIfNotFound: true);
         m_Minigame_Press = m_Minigame.FindAction("Press", throwIfNotFound: true);
@@ -281,6 +313,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Interact;
     private readonly InputAction m_Player_BuildMode;
     private readonly InputAction m_Player_RightButton;
+    private readonly InputAction m_Player_DestroyMode;
     public struct PlayerActions
     {
         private @PlayerInputActions m_Wrapper;
@@ -288,6 +321,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         public InputAction @Interact => m_Wrapper.m_Player_Interact;
         public InputAction @BuildMode => m_Wrapper.m_Player_BuildMode;
         public InputAction @RightButton => m_Wrapper.m_Player_RightButton;
+        public InputAction @DestroyMode => m_Wrapper.m_Player_DestroyMode;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -306,6 +340,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @RightButton.started += instance.OnRightButton;
             @RightButton.performed += instance.OnRightButton;
             @RightButton.canceled += instance.OnRightButton;
+            @DestroyMode.started += instance.OnDestroyMode;
+            @DestroyMode.performed += instance.OnDestroyMode;
+            @DestroyMode.canceled += instance.OnDestroyMode;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -319,6 +356,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @RightButton.started -= instance.OnRightButton;
             @RightButton.performed -= instance.OnRightButton;
             @RightButton.canceled -= instance.OnRightButton;
+            @DestroyMode.started -= instance.OnDestroyMode;
+            @DestroyMode.performed -= instance.OnDestroyMode;
+            @DestroyMode.canceled -= instance.OnDestroyMode;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -395,6 +435,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         void OnInteract(InputAction.CallbackContext context);
         void OnBuildMode(InputAction.CallbackContext context);
         void OnRightButton(InputAction.CallbackContext context);
+        void OnDestroyMode(InputAction.CallbackContext context);
     }
     public interface IMinigameActions
     {

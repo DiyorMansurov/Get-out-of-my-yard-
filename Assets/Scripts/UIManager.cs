@@ -40,8 +40,18 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Sprite sSprite;
     [SerializeField] private Sprite dSprite;
 
+    [SerializeField] private Sprite NormalSprite;
+    [SerializeField] private Sprite BuildSprite;
+    [SerializeField] private Sprite DestroySprite;
+    [SerializeField] private Image _modeIndicatorImage;
+
     private Dictionary<string, Sprite> keySprites;
     
+
+    [SerializeField] private TMP_Text _pearlsText;
+    [SerializeField] private TMP_Text _pearlsAmountGeneratorText;
+
+
     
     private void Awake() {
         Instance = this;
@@ -60,6 +70,26 @@ public class UIManager : MonoBehaviour
         HealthSliderAnimation();
         ProgressSliderAnimation();
         MoneyAnimation();
+        RotateTowardsPlayer(_pearlsAmountGeneratorText.transform, Camera.main.transform);
+        
+    }
+
+    public void UpdateModeIndicator(Player.Modes mode)
+    {
+        switch (mode)
+        {
+            case Player.Modes.Normal:
+                _modeIndicatorImage.sprite = NormalSprite;
+                break;
+            case Player.Modes.Build:
+                _modeIndicatorImage.sprite = BuildSprite;
+                break;
+            case Player.Modes.Destroy:
+                _modeIndicatorImage.sprite = DestroySprite;
+                break;
+            default:
+                break;
+        }
     }
 
     public void CrosshairSet(CrosshairType type)
@@ -100,9 +130,32 @@ public class UIManager : MonoBehaviour
         _minigameSuccesessText.text = $"{(float)Current}/{(float)Max}";
     }
 
+    public void RefreshGeneratorPearls(int amount, int toWin)
+    {
+        _pearlsAmountGeneratorText.text = $"{amount}/{toWin}";
+    }
+
+    private void RotateTowardsPlayer(Transform uiElement, Transform playerTransform)
+    {
+        Vector3 direction = uiElement.position - playerTransform.position;
+        direction.y = 0;
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            uiElement.rotation = Quaternion.Slerp(uiElement.rotation, targetRotation, Time.deltaTime * 5f);
+        }
+    }
+
     public void RefreshMoneyAmount(int amount)
     {
         _moneyTarget = amount;
+    }
+
+    public void RefreshPearlText(int amount)
+    {
+        _pearlsText.text = $"{amount.ToString()}/5";
+        Animator anim = _pearlsText.gameObject.GetComponent<Animator>();
+        anim.SetInteger("Amount", amount);
     }
 
     private void MoneyAnimation()

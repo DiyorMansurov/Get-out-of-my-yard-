@@ -31,6 +31,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "DestroyMode",
+                    "type": "Button",
+                    "id": "1884d76a-a3de-49a1-8dd0-fdc69e6f3c8f",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -69,8 +78,8 @@
                 },
                 {
                     "name": "",
-                    "id": "a53b666c-9782-4f9f-a3a2-8979bf3a5508",
-                    "path": "<Gamepad>/dpad/left",
+                    "id": "ad0fb391-e504-4220-9ba9-ac1955e8cd1a",
+                    "path": "<Gamepad>/dpad/right",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -86,6 +95,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "RightButton",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "05cb367f-5ba7-4842-8706-80a9477a5123",
+                    "path": "<Keyboard>/g",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DestroyMode",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b31cd3af-6853-4071-bb0e-7dfbb02a4db1",
+                    "path": "<Gamepad>/dpad/left",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DestroyMode",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

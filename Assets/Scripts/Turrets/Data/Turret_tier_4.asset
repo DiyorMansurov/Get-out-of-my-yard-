@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   range: 11
   fireRate: 1
-  bulletPrefab: {fileID: 1862884881136348319, guid: 716bbbd944f175348b32352b6b56fe40, type: 3}
+  bulletPrefab: {fileID: 152755729352653793, guid: d40b8cb33cbb7664bbc231aa0c740448, type: 3}
   damage: 10
   cost: 250

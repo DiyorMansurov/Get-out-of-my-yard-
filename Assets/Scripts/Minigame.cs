@@ -8,6 +8,8 @@ public class Minigame : MonoBehaviour
     private PlayerInputActions _input;
     [SerializeField] private int _requiredSuccesses;
     [SerializeField] private StarterAssets.FirstPersonController _playerControllerScript;
+    [SerializeField] private Player _playerScript;
+
 
     private int _currentSuccesses = 0;
     private Key _expectedKey;
@@ -43,6 +45,21 @@ public class Minigame : MonoBehaviour
     public void StartGame()
     {
         if (_IsActive) return;
+        if (_playerScript.GetCurrentUpgradeTier() >= Player.UpgradeTiers.Tier3) return;
+
+        switch (_playerScript.GetCurrentUpgradeTier())
+        {
+            case Player.UpgradeTiers.Tier0:
+                _requiredSuccesses = 5;
+                break;
+            case Player.UpgradeTiers.Tier1:
+                _requiredSuccesses = 10;
+                break;
+            case Player.UpgradeTiers.Tier2:
+                _requiredSuccesses = 15;
+                break;
+            default: break;
+        }
 
         _playerControllerScript.TogglePlayerinput();
         _currentSuccesses = 0;
@@ -105,6 +122,7 @@ public class Minigame : MonoBehaviour
     private void CompleteGame()
     {
         _currentSuccesses = 0; 
+        _playerScript.UpgradeCurrentUpgradeTier();
         UIManager.Instance.RefreshProgressSlider(_currentSuccesses, _requiredSuccesses);  
         _playerControllerScript.TogglePlayerinput();
         _IsActive = false;

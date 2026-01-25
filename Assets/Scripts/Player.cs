@@ -10,16 +10,35 @@ public class Player : MonoBehaviour
     [SerializeField] private Camera _playerCamera;
     [SerializeField] private TurretDefinition _definition;
     [SerializeField] private int _money = 100;
-    public bool _buildMode = false;
+    [SerializeField] private int _pearls = 0;
     private GameObject _ghostObject;
     [SerializeField] private GameObject _turretPrefab;
     [SerializeField] private GameObject _realTurretPrefab;
     private int _placementLayerMask;
     private IHighlightable _currentHighlight;
-    [SerializeField] private float _interactionDistance = 20f; 
+    [SerializeField] private float _interactionDistance = 5f; 
     private RaycastHit _cachedHit;
     private bool _hasHit;
     private int _buildSurface;
+
+    public enum UpgradeTiers
+    {
+        Tier0,
+        Tier1,
+        Tier2,
+        Tier3,
+    }
+
+    private UpgradeTiers _currentUpgradeTier = UpgradeTiers.Tier0;
+
+    public enum Modes
+    {
+        Normal,
+        Build,
+        Destroy
+    }
+
+    private Modes _currentMode = Modes.Normal;
   
 
     private void Awake() {
@@ -31,50 +50,121 @@ public class Player : MonoBehaviour
     private void OnEnable() {
         _input.Player.Enable();
         _input.Player.Interact.performed += ctx => RaycastInteract();
-        _input.Player.BuildMode.performed += ctx => ToggleBuildMode();
+        _input.Player.BuildMode.performed += ctx => ChangePlayerMode(Modes.Build);
+        _input.Player.DestroyMode.performed += ctx => ChangePlayerMode(Modes.Destroy);
         _input.Player.RightButton.performed += ctx => RightClick();
     }
     private void OnDisable() {
         _input.Player.Disable();
     }
 
+    public UpgradeTiers GetCurrentUpgradeTier()
+    {
+        return _currentUpgradeTier;
+    }
+
+    public void UpgradeCurrentUpgradeTier()
+    {
+        if (_currentUpgradeTier < UpgradeTiers.Tier3)
+        {
+            _currentUpgradeTier++;
+        }
+    }
+
+    public void DepositPearls()
+    {
+        _pearls--;
+    }
+
+    public bool PearlsEmpty()
+    {
+        return _pearls == 0;
+    }
+
     private void Update()
     {
         RaycastInfo();
         UpdateMoney();
+        UpdatePearls();
     }
 
-    public void CollectCogs(int amount)
+    public void CollectItem(CollectiblesType type, int amount)
     {
-        _money += amount;
+        switch (type)
+        {
+            case CollectiblesType.Cog:_money += amount;break;
+            case CollectiblesType.Pearl:_pearls += amount;break;
+            default:break;
+        }
+        
+    }
+
+    public bool CanCollectPearls(int amount)
+    {
+        return _pearls + amount <= 5;
     }
     private void UpdateMoney()
     {
         UIManager.Instance.RefreshMoneyAmount(_money);
     }
+    private void UpdatePearls()
+    {
+        UIManager.Instance.RefreshPearlText(_pearls);
+    }
 
     private void RightClick()
     {
-        if (_buildMode == true)
+        if (_currentMode != Modes.Normal)
         {
-            ToggleBuildMode();
+            ChangePlayerMode(Modes.Normal);
         }
     }
 
-    private void ToggleBuildMode()
+
+    private void ChangePlayerMode(Modes newMode)
     {
-        _buildMode = !_buildMode;
-        UIManager.Instance.ToggleCrosshair(_buildMode);
-        if (_buildMode)
+        if (_currentMode == newMode && newMode != Modes.Normal)
+        {newMode = Modes.Normal;}
+        _currentMode = newMode;
+        UIManager.Instance.UpdateModeIndicator(_currentMode);
+        switch (_currentMode)
         {
-            _ghostObject = Instantiate(_turretPrefab, Vector3.zero, Quaternion.identity);
+            case Modes.Normal:
+                EnterNormalMode();
+                break;
+            case Modes.Build:
+                EnterBuildMode();
+                break;
+            case Modes.Destroy:
+                EnterDestroyMode();
+                break;
+            default:
+                break;
         }
-        else
+    }
+
+    private void EnterNormalMode()
+    {
+        UIManager.Instance.ToggleCrosshair(false);
+        UIManager.Instance.CrosshairSet(CrosshairType.Default);
+        if (_ghostObject != null)
         {
-            if (_ghostObject != null)
-            {
-                Destroy(_ghostObject);
-            }
+            Destroy(_ghostObject);
+        }
+    }
+
+    private void EnterBuildMode()
+    {
+        UIManager.Instance.ToggleCrosshair(true);
+        _ghostObject = Instantiate(_turretPrefab, Vector3.zero, Quaternion.identity);
+    }
+    private void EnterDestroyMode()
+    {
+        UIManager.Instance.ToggleCrosshair(false);
+        UIManager.Instance.CrosshairSet(CrosshairType.Destroy);
+        if (_ghostObject != null)
+        {
+            Destroy(_ghostObject);
         }
     }
 
@@ -88,11 +178,26 @@ public class Player : MonoBehaviour
     {
         Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
         
-        if (_buildMode)
+        if (_currentMode == Modes.Build)
         {
             _hasHit = Physics.Raycast(ray, out _cachedHit, _interactionDistance, _buildSurface);
             HandleBuildMode(_cachedHit);
 
+        }else if (_currentMode == Modes.Destroy)
+        {
+            _hasHit = Physics.Raycast(ray, out _cachedHit, _interactionDistance);
+            if (_hasHit)
+            {
+                Turret turret = _cachedHit.collider.GetComponentInParent<Turret>();
+                if (turret != null)
+                {
+                    HandleHighlight(_cachedHit);
+                }
+            }
+            else
+            {
+                HighlightObject(null);
+            }
         }
         else
         {
@@ -110,7 +215,7 @@ public class Player : MonoBehaviour
     }
     private void HandleBuildMode(RaycastHit hit)
     {
-        if (_buildMode)
+        if (_currentMode == Modes.Build)
         {
             _ghostObject.transform.position = hit.point;
             _ghostObject.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
@@ -173,7 +278,7 @@ public class Player : MonoBehaviour
         Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
         RaycastHit hit;
         
-        if (!_buildMode)
+        if (_currentMode == Modes.Normal)
         {
             if (Physics.Raycast(ray, out hit, _interactionDistance))
             {   
@@ -191,18 +296,36 @@ public class Player : MonoBehaviour
                         UpgradeTurret(turretParent, null);                         
                     }else if (upgradable != null)
                     {
-                        UpgradeTurret(null, upgradable);  
+                        turretParent = hit.collider.GetComponentInChildren<Turret>(true);
+                        UpgradeTurret(turretParent, upgradable);  
                     }
                 }
 
                 
             }
-        } else
+        } else if (_currentMode == Modes.Build)
         {
             if (Physics.Raycast(ray, out hit, _interactionDistance, _buildSurface) && CheckValidPlacement(hit.point) && _money >= _definition.tiers[0].cost)
             {
                 Instantiate(_realTurretPrefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal));
                 _money -= _definition.tiers[0].cost;
+            }
+        }else
+        {
+            if (Physics.Raycast(ray, out hit, _interactionDistance))
+            {
+                    Turret turret = hit.collider.GetComponentsInParent<Turret>().FirstOrDefault();
+                    if (turret == null)
+                    {
+                        turret = hit.collider.GetComponentInChildren<Turret>(true);
+                    }
+
+                    if (turret != null)
+                    {
+                        int refundAmount = turret.GetSellAmount();
+                        _money += refundAmount;
+                        Destroy(turret.gameObject);
+                    }
             }
         }
     }
@@ -244,16 +367,23 @@ public class Player : MonoBehaviour
         {
             if (upgradable.CanUpgrade())
             {
-                int cost = upgradable.UpgradeCost();
-                 if (_money >= cost)
+                if (parent.CurrentTier() < (int)_currentUpgradeTier)
                 {
-                    _money -= cost;
-                    upgradable.Upgrade();
-                }
-                else
+                    int cost = upgradable.UpgradeCost();
+                    if (_money >= cost)
+                    {
+                        _money -= cost;
+                        upgradable.Upgrade();
+                    }
+                    else
+                    {
+                        Debug.Log("Not Enough Money for Upgrade");
+                    }
+                }else
                 {
-                    Debug.Log("Not Enough Money for Upgrade");
+                    Debug.Log("Next tier is not learned");
                 }
+                
             }
             else
             {
