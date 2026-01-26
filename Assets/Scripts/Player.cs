@@ -20,6 +20,7 @@ public class Player : MonoBehaviour
     private RaycastHit _cachedHit;
     private bool _hasHit;
     private int _buildSurface;
+    private bool _dreamsMessageWorked = false;
 
     public enum UpgradeTiers
     {
@@ -58,6 +59,22 @@ public class Player : MonoBehaviour
         _input.Player.Disable();
     }
 
+    private void OnTriggerEnter(Collider other) {
+        if (other.gameObject.CompareTag("Invisible_Wall") && !_dreamsMessageWorked)
+        {
+            UIManager.Instance.NotificationPopUp("Why is there a void instead of forest, feels like a dream...", new Color(0.8362166f, 0.6556604f, 1f));
+
+            _dreamsMessageWorked = true;
+        }
+    }
+
+    private void OnTriggerExit(Collider other) {
+        if (other.gameObject.CompareTag("Invisible_Wall") && _dreamsMessageWorked)
+        {
+            _dreamsMessageWorked = false;
+        }
+    }
+
     public UpgradeTiers GetCurrentUpgradeTier()
     {
         return _currentUpgradeTier;
@@ -68,6 +85,10 @@ public class Player : MonoBehaviour
         if (_currentUpgradeTier < UpgradeTiers.Tier3)
         {
             _currentUpgradeTier++;
+            UIManager.Instance.NotificationPopUp($"{_currentUpgradeTier} turrets learned", new Color(0.6415326f, 0.9811321f, 0.4026344f));
+        } else
+        {
+            Debug.Log("Stop");
         }
     }
 
@@ -92,8 +113,12 @@ public class Player : MonoBehaviour
     {
         switch (type)
         {
-            case CollectiblesType.Cog:_money += amount;break;
-            case CollectiblesType.Pearl:_pearls += amount;break;
+            case CollectiblesType.Cog:_money += amount;
+                 UIManager.Instance.UpdateOnMapIndicator("cog", -1);
+                 break;
+            case CollectiblesType.Pearl:_pearls += amount;
+                 UIManager.Instance.UpdateOnMapIndicator("pearl", -1);
+                 break;
             default:break;
         }
         
@@ -168,10 +193,24 @@ public class Player : MonoBehaviour
         }
     }
 
+    private bool CheckValidRotation()
+    {
+        Vector3 right = _ghostObject.transform.right;
+        Vector3 forward = _ghostObject.transform.forward;
+
+        float xTilt = Vector3.Angle(Vector3.ProjectOnPlane(right, Vector3.up), right);
+        float zTilt = Vector3.Angle(Vector3.ProjectOnPlane(forward, Vector3.up), forward);
+
+        return xTilt <= 30f && zTilt <= 30f;
+    }
+
     private bool CheckValidPlacement(Vector3 position)
     {
         float radius = 1f;
-        return !Physics.CheckSphere(position, radius, _placementLayerMask);
+
+        bool SpaceClear = !Physics.CheckSphere(position, radius, _placementLayerMask);
+        bool roationValid = CheckValidRotation();
+        return SpaceClear && roationValid;
     }
 
     private void RaycastInfo()
@@ -221,6 +260,7 @@ public class Player : MonoBehaviour
             _ghostObject.transform.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
             bool isValidPlacement = CheckValidPlacement(hit.point);
+            
             SetPreviewMaterial(isValidPlacement);
         }
 
@@ -305,10 +345,20 @@ public class Player : MonoBehaviour
             }
         } else if (_currentMode == Modes.Build)
         {
-            if (Physics.Raycast(ray, out hit, _interactionDistance, _buildSurface) && CheckValidPlacement(hit.point) && _money >= _definition.tiers[0].cost)
+            if (Physics.Raycast(ray, out hit, _interactionDistance, _buildSurface) && CheckValidPlacement(hit.point))
             {
-                Instantiate(_realTurretPrefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal));
-                _money -= _definition.tiers[0].cost;
+                if (_money >= _definition.tiers[0].cost)
+                {
+                    Instantiate(_realTurretPrefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal));
+                    _money -= _definition.tiers[0].cost;
+                }else
+                {
+                    UIManager.Instance.NotificationPopUp("Not Enough money", new Color(0.9900868f, 0.990566f, 0.8083392f));
+                }
+                
+            }else
+            {
+                UIManager.Instance.NotificationPopUp("Placement is not valid", new Color(0.9900868f, 0.990566f, 0.8083392f));
             }
         }else
         {
@@ -377,17 +427,17 @@ public class Player : MonoBehaviour
                     }
                     else
                     {
-                        Debug.Log("Not Enough Money for Upgrade");
+                        UIManager.Instance.NotificationPopUp("Not Enough Money for Upgrade", new Color(0.7885814f, 0.9200487f, 0.9339623f));
                     }
                 }else
                 {
-                    Debug.Log("Next tier is not learned");
+                    UIManager.Instance.NotificationPopUp("Next tier is not learned", new Color(0.7885814f, 0.9200487f, 0.9339623f));
                 }
                 
             }
             else
             {
-                Debug.Log("Turret is already fully leveled up");
+                UIManager.Instance.NotificationPopUp("Turret is already fully leveled up", new Color(0.7885814f, 0.9200487f, 0.9339623f));
             }
         }                    
     }

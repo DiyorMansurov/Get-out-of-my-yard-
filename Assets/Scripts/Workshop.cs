@@ -23,7 +23,6 @@ public class Workshop : MonoBehaviour, IInteractable, IHighlightable, ICrosshair
 
     private void GiveReward()
     {
-        Debug.Log("Completed");
         _minigame.OnCompleted -= GiveReward;
     }
 

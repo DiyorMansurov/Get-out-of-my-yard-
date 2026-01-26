@@ -44,8 +44,17 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Sprite BuildSprite;
     [SerializeField] private Sprite DestroySprite;
     [SerializeField] private Image _modeIndicatorImage;
+    [SerializeField] private TMP_Text _notificationText;
+    private Animator _notificationAnim;
 
     private Dictionary<string, Sprite> keySprites;
+
+    [SerializeField] private TMP_Text _cogsOnMap;
+    [SerializeField] private TMP_Text _pearlsOnMap;
+    [SerializeField] private TMP_Text _enemiesOnMap;
+    private int _cogsOnMapAmount = 0;
+    private int _pearlsOnMapAmount = 0;
+    private int _enemiesOnMapAmount = 0;
     
 
     [SerializeField] private TMP_Text _pearlsText;
@@ -57,7 +66,7 @@ public class UIManager : MonoBehaviour
         Instance = this;
         map = _crosshairs.ToDictionary(c => c.type, c => c.sprite);
         _houseHealthIcon_anim = _houseHealthIcon.GetComponent<Animator>();
-
+        _notificationAnim = _notificationText.GetComponent<Animator>();
         keySprites = new Dictionary<string, Sprite>
         {
             { "W", wSprite },
@@ -70,7 +79,12 @@ public class UIManager : MonoBehaviour
         HealthSliderAnimation();
         ProgressSliderAnimation();
         MoneyAnimation();
-        RotateTowardsPlayer(_pearlsAmountGeneratorText.transform, Camera.main.transform);
+
+        if (_pearlsAmountGeneratorText != null)
+        {
+            RotateTowardsPlayer(_pearlsAmountGeneratorText.transform, Camera.main.transform);
+        }
+        
         
     }
 
@@ -92,6 +106,23 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void UpdateOnMapIndicator(string type, int amount)
+    {
+        switch (type)
+        {
+            case "cog": _cogsOnMapAmount += amount;
+                _cogsOnMap.text = $"X {_cogsOnMapAmount.ToString()}";
+                break;
+            case "pearl": _pearlsOnMapAmount += amount;
+                _pearlsOnMap.text = $"X {_pearlsOnMapAmount.ToString()}";
+                break;
+            case "enemy": _enemiesOnMapAmount += amount;
+                _enemiesOnMap.text = $"X {_enemiesOnMapAmount.ToString()}";
+                break;
+            default:break;
+        }
+    }
+
     public void CrosshairSet(CrosshairType type)
     {
         _crosshairImage.sprite = map[type];
@@ -108,6 +139,13 @@ public class UIManager : MonoBehaviour
             _crosshairImage.SetNativeSize();
         }
         
+    }
+
+    public void NotificationPopUp(string message, Color color)
+    {
+        _notificationText.text = message;
+        _notificationText.color = color;
+        _notificationAnim.Play("Notification", 0, 0f);
     }
 
     public void ToggleMinigameUI(bool state)
@@ -137,6 +175,8 @@ public class UIManager : MonoBehaviour
 
     private void RotateTowardsPlayer(Transform uiElement, Transform playerTransform)
     {
+        if (uiElement == null) return;
+  
         Vector3 direction = uiElement.position - playerTransform.position;
         direction.y = 0;
         if (direction != Vector3.zero)
@@ -185,7 +225,6 @@ public class UIManager : MonoBehaviour
     public void RefreshSlider(int health)
     {
         _healthSliderTarget = (float)health/100f;
-        
     }
 
     private void HealthSliderAnimation()

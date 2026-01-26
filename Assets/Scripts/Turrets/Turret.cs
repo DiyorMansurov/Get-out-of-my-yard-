@@ -18,6 +18,7 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
     [SerializeField] private GameObject _onTurretCogIcon;
     private Outline outline;
     private float _fireCooldown = 0f;
+    private Transform _aimPoint;
 
     private Transform _closestTarget = null;
     private bool _isMaxed = false;
@@ -28,7 +29,7 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
 
         if (_closestTarget != null)
         {
-            LookAtTarget(_closestTarget);
+            LookAtTarget(_aimPoint);
         }
 
         RotateTowardsPlayer(_onTurretCanvas.transform, Camera.main.transform);
@@ -109,8 +110,8 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
                     GameObject bullet = Instantiate(CurrentTierData.bulletPrefab, point.position, Quaternion.identity);
                     Bullet bulletComponent = bullet.GetComponent<Bullet>();
                     Enemy enemyScript = _closestTarget.GetComponent<Enemy>();
-                    Transform AimPoint = enemyScript.GetAimPoint();
-                    bulletComponent.Initialize(AimPoint, CurrentTierData.damage, enemyScript);
+                    _aimPoint = enemyScript.GetAimPoint();
+                    bulletComponent.Initialize(_aimPoint, CurrentTierData.damage, enemyScript);
                     _fireCooldown = 1f / CurrentTierData.fireRate;
                     Vector3 direction = _closestTarget.position - transform.position;
                     Instantiate(_shootVFX, point.position, Quaternion.LookRotation(direction));
@@ -153,8 +154,6 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
 
     private void UpdateBulletPoints()
     {
-        Debug.Log("Length" + _tierPrefabs.Length);
-        Debug.Log(_currentTier);
         GameObject activeTier = _tierPrefabs[_currentTier];
         _bulletPoints = activeTier.GetComponentsInChildren<Transform>()
                         .Where(t => t.CompareTag("BulletPoint"))

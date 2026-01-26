@@ -14,9 +14,11 @@ public class Enemy : MonoBehaviour
     private House _house;
     public Action OnDeath;
     private Transform _target;
+    private int _damage;
     private int _randomAmountOfCogs;
     private Animator _anim;
     private bool _dropsPearl;
+    private bool _isDead = false;
     [SerializeField] private int _chanceToDropPearl;
     [SerializeField] private Transform _AimPoint;
     [SerializeField] private float _cogDropForce = 2f;
@@ -60,7 +62,7 @@ public class Enemy : MonoBehaviour
 
     private void CheckIfDropsPearl()
     {
-        if (UnityEngine.Random.Range(1,_chanceToDropPearl) == _chanceToDropPearl)
+        if (UnityEngine.Random.Range(1,_chanceToDropPearl + 1) == _chanceToDropPearl)
         {
             _dropsPearl = true;
         }
@@ -85,6 +87,16 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    public void SetDamage(int damage)
+    {
+        _damage = damage;
+    }
+
+    public void SetHealth(int health)
+    {
+        _health = health;
+    }
+
     public Transform GetAimPoint()
     {
         return _AimPoint;
@@ -92,13 +104,20 @@ public class Enemy : MonoBehaviour
 
     public void SetHouse(House house)
     {
-        _house = house;
+        if (house != null)
+        {
+            _house = house;
+        }
+        
     }
     public void TakeDamage(float damage)
     {
+        if (_isDead) return;
+
         _health -= damage;
         if (_health <= 0)
         {
+            _isDead = true;
             Die();
         }
     }
@@ -115,6 +134,7 @@ public class Enemy : MonoBehaviour
         for (int i = 0; i < _randomAmountOfCogs; i++)
         {
             GameObject cog = Instantiate(_cogPrefab, _AimPoint.position, Quaternion.identity);
+            UIManager.Instance.UpdateOnMapIndicator("cog", 1);
 
             Rigidbody _cogRB;
             _cogRB = cog.GetComponent<Rigidbody>();
@@ -131,6 +151,7 @@ public class Enemy : MonoBehaviour
         if (_dropsPearl)
         {
             GameObject pearl = Instantiate(_pearlPrefab, _AimPoint.position, Quaternion.identity);
+            UIManager.Instance.UpdateOnMapIndicator("pearl", 1);
 
             Rigidbody _pearlRB;
             _pearlRB = pearl.GetComponent<Rigidbody>();
@@ -154,9 +175,9 @@ public class Enemy : MonoBehaviour
             float distance = Vector3.Distance(transform.position, _target.position);
             if (distance <= 2f)
             {
-                House house = _house.GetComponent<House>();
-                if (house != null)
-                {     
+                if (_house != null)
+                {   
+                    House house = _house.GetComponent<House>();
                     agent.isStopped = true;
                     agent.velocity = Vector3.zero;
 
@@ -173,8 +194,10 @@ public class Enemy : MonoBehaviour
         while (house != null)
         {
             _anim.SetTrigger("Attack");
-            house.TakeDamage(10);
+            house.TakeDamage(_damage);
             yield return new WaitForSeconds(3f);
         }
     }
+
+
 }

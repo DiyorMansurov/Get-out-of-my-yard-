@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Turret_tier_3
   m_EditorClassIdentifier: 
   range: 9
-  fireRate: 1
+  fireRate: 1.2
   bulletPrefab: {fileID: 152755729352653793, guid: d40b8cb33cbb7664bbc231aa0c740448, type: 3}
   damage: 10
   cost: 150

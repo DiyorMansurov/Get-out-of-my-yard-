@@ -23,7 +23,7 @@ public class Collectible : MonoBehaviour, IInteractable, IHighlightable, ICrossh
             Destroy(gameObject);
         }else
         {
-            Debug.Log("Not enough Space");
+            UIManager.Instance.NotificationPopUp($"Not enough space", new Color(0.9245283f, 0.2049662f, 0.2049662f));
         }
         
     }

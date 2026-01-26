@@ -17,7 +17,7 @@ public class Door : MonoBehaviour, IInteractable, IHighlightable, ICrosshairTarg
     {
         if (isRotating) return;
 
-        float targetZ = IsOpened ? 0f : 90f;
+        float targetZ = IsOpened ? 0f : -90f;
         StartCoroutine(RotateDoor(targetZ));
 
         IsOpened = !IsOpened;

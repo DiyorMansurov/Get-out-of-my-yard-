@@ -493,7 +493,7 @@ MonoBehaviour:
   _health: 100
   _cogPrefab: {fileID: 466419537891984838, guid: 21b57fe2d5449e846a068ca4fcf975d4, type: 3}
   _pearlPrefab: {fileID: 5117524787755099913, guid: e1336c11621a56a41bdd6898e2e145d4, type: 3}
-  _chanceToDropPearl: 10
+  _chanceToDropPearl: 8
   _AimPoint: {fileID: 1109320190749948771}
   _cogDropForce: 2
   _hpSlider: {fileID: 6117197418322143820}

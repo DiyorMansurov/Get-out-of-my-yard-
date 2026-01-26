@@ -7,6 +7,9 @@ TagManager:
   - CinemachineTarget
   - Enemy
   - BulletPoint
+  - Turret
+  - FxTemporaire
+  - Invisible_Wall
   layers:
   - Default
   - TransparentFX

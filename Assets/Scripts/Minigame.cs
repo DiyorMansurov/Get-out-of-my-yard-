@@ -45,7 +45,11 @@ public class Minigame : MonoBehaviour
     public void StartGame()
     {
         if (_IsActive) return;
-        if (_playerScript.GetCurrentUpgradeTier() >= Player.UpgradeTiers.Tier3) return;
+        if (_playerScript.GetCurrentUpgradeTier() >= Player.UpgradeTiers.Tier3)
+        {
+            UIManager.Instance.NotificationPopUp($"you already learned everything", new Color(0.6415326f, 0.9811321f, 0.4026344f));
+            return;
+        }
 
         switch (_playerScript.GetCurrentUpgradeTier())
         {
