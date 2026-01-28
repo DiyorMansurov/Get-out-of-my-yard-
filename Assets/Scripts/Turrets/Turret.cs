@@ -16,6 +16,7 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
     [SerializeField] private TMP_Text _onTurretCost;
     [SerializeField] private Canvas _onTurretCanvas;
     [SerializeField] private GameObject _onTurretCogIcon;
+    [SerializeField] private AudioSource _sfxSource;
     private Outline outline;
     private float _fireCooldown = 0f;
     private Transform _aimPoint;
@@ -115,10 +116,17 @@ public class Turret : MonoBehaviour, IUpgradable, IHighlightable, ICrosshairTarg
                     _fireCooldown = 1f / CurrentTierData.fireRate;
                     Vector3 direction = _closestTarget.position - transform.position;
                     Instantiate(_shootVFX, point.position, Quaternion.LookRotation(direction));
+                    PlaySFX();
                 }
             }
         
     }
+
+     private void PlaySFX()
+    {
+        _sfxSource.Play();
+    }
+
 
     private void LookAtTarget(Transform target)
     {

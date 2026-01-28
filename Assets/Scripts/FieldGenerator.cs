@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class FieldGenerator : MonoBehaviour, IInteractable, IHighlightable, ICrosshairTarget{
     private Outline[] outlines;
     [SerializeField] private Player _playerScript;
@@ -24,6 +25,10 @@ public class FieldGenerator : MonoBehaviour, IInteractable, IHighlightable, ICro
             _playerScript.DepositPearls();
             _pearlAmount++;
             UIManager.Instance.RefreshGeneratorPearls(_pearlAmount, _pearlsToWin);
+            if (_pearlAmount >= _pearlsToWin)
+            {
+                UIManager.Instance.WinSequence();
+            }
         }
     }
 

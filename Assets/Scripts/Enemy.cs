@@ -26,6 +26,9 @@ public class Enemy : MonoBehaviour
 
     [SerializeField] private Slider _hpSlider;
 
+    [SerializeField] private AudioSource _hitSFX;
+    [SerializeField] private AudioSource _deathSFX;
+
 
     void Awake()
     {
@@ -126,6 +129,7 @@ public class Enemy : MonoBehaviour
     {
         OnDeath?.Invoke();
         DropLoot();
+        _deathSFX.Play();
         Destroy(gameObject);
     }
 
@@ -145,6 +149,7 @@ public class Enemy : MonoBehaviour
                 randomDir.y = Mathf.Abs(randomDir.y);
 
                 _cogRB.AddForce(randomDir * _cogDropForce, ForceMode.Impulse);
+                _cogRB.AddTorque(UnityEngine.Random.onUnitSphere * _cogDropForce, ForceMode.Impulse);
             }
         }
 
@@ -194,6 +199,7 @@ public class Enemy : MonoBehaviour
         while (house != null)
         {
             _anim.SetTrigger("Attack");
+            _hitSFX.Play();
             house.TakeDamage(_damage);
             yield return new WaitForSeconds(3f);
         }

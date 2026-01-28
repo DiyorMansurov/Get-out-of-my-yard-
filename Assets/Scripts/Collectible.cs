@@ -6,13 +6,14 @@ public class Collectible : MonoBehaviour, IInteractable, IHighlightable, ICrossh
 {
     [SerializeField] private CollectiblesType _type;
     [SerializeField] private int _amount;
+    [SerializeField] private AudioClip _collectSFX;
     private Player _player;
     private Outline outline;
 
     private void Awake()
     {
         _player = GameObject.Find("Player/PlayerCapsule").GetComponent<Player>();
-        outline = GetComponentInParent<Outline>();
+        outline = GetComponentInChildren<Outline>();
         outline.enabled = false;
     }
     public void Interact()
@@ -20,6 +21,7 @@ public class Collectible : MonoBehaviour, IInteractable, IHighlightable, ICrossh
         if (CanCollect())
         {
             _player.CollectItem(_type, _amount);
+            AudioManager.Instance.PlaySFX(_collectSFX);
             Destroy(gameObject);
         }else
         {

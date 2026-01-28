@@ -9,6 +9,7 @@ public class Minigame : MonoBehaviour
     [SerializeField] private int _requiredSuccesses;
     [SerializeField] private StarterAssets.FirstPersonController _playerControllerScript;
     [SerializeField] private Player _playerScript;
+    [SerializeField] private AudioClip _successSFX;
 
 
     private int _currentSuccesses = 0;
@@ -65,7 +66,7 @@ public class Minigame : MonoBehaviour
             default: break;
         }
 
-        _playerControllerScript.TogglePlayerinput();
+        _playerControllerScript.TogglePlayerinput(false);
         _currentSuccesses = 0;
         _IsActive = true;
         UIManager.Instance.ToggleMinigameUI(_IsActive);
@@ -128,11 +129,12 @@ public class Minigame : MonoBehaviour
         _currentSuccesses = 0; 
         _playerScript.UpgradeCurrentUpgradeTier();
         UIManager.Instance.RefreshProgressSlider(_currentSuccesses, _requiredSuccesses);  
-        _playerControllerScript.TogglePlayerinput();
+        _playerControllerScript.TogglePlayerinput(true);
         _IsActive = false;
         _input.Minigame.Disable();
         UIManager.Instance.ToggleMinigameUI(_IsActive);
         UIManager.Instance.ToggleCrosshair(_IsActive);
+        AudioManager.Instance.PlaySFX(_successSFX);
         OnCompleted?.Invoke();
     }
 
@@ -141,7 +143,7 @@ public class Minigame : MonoBehaviour
     {   
         _currentSuccesses = 0; 
         UIManager.Instance.RefreshProgressSlider(_currentSuccesses, _requiredSuccesses);
-        _playerControllerScript.TogglePlayerinput();
+        _playerControllerScript.TogglePlayerinput(true);
         _IsActive = false;
         _input.Minigame.Disable();
         UIManager.Instance.ToggleMinigameUI(_IsActive);

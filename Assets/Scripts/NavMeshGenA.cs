@@ -1,18 +1,7 @@
 
-/****
-NOTE NOTE NOTE
-1. Add this component to a terrain
-2. Set your area ID's to be what you want the agent to think each surface in your terrain is (eg, Grass, Path), in the same order as the textures assigned in the terrain textures
-3. Set "Defaultarea" to be whatever texture you expect to be the "most" common terrain texture. Generall this will be the first texture you assigned in step 1, eg "Grass"
-IF THIS IS STILL TO SLOW:
-- Adjust step to 2, 5, 10 or something higher
-*/
-
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
@@ -48,9 +37,17 @@ public class NavMeshGenA : MonoBehaviour
     [ContextMenu("Generate NavMesh From Terrain")]
     public void Build()
     {
-        #if UNITY_EDITOR
-                EditorCoroutineUtility.StartCoroutineOwnerless(GenMeshes());
-        #endif
+       #if UNITY_EDITOR
+if (Application.isPlaying)
+{
+    StartCoroutine(GenMeshes());
+}
+else
+{
+    Debug.LogWarning("GenMeshes can only run in play mode without EditorCoroutine package.");
+}
+#endif
+
     }
     
     IEnumerator GenMeshes()

@@ -17,6 +17,17 @@ public class Player : MonoBehaviour
     private int _placementLayerMask;
     private IHighlightable _currentHighlight;
     [SerializeField] private float _interactionDistance = 5f; 
+    [SerializeField] private GameObject _rockPrefab;
+    [SerializeField] private Transform _throwPoint;
+    [SerializeField] private float _throwForce = 25f;
+    [SerializeField] private float _throwCooldown = 1f;
+
+    [SerializeField] private AudioSource _rockThrowSFX;
+    [SerializeField] private AudioClip _turretBuild;
+    [SerializeField] private AudioClip _turretDestroy;
+    [SerializeField] private AudioClip _turretUpgrade;
+
+
     private RaycastHit _cachedHit;
     private bool _hasHit;
     private int _buildSurface;
@@ -48,12 +59,16 @@ public class Player : MonoBehaviour
         _buildSurface = LayerMask.GetMask("Ground");
     }
 
+
     private void OnEnable() {
         _input.Player.Enable();
         _input.Player.Interact.performed += ctx => RaycastInteract();
         _input.Player.BuildMode.performed += ctx => ChangePlayerMode(Modes.Build);
         _input.Player.DestroyMode.performed += ctx => ChangePlayerMode(Modes.Destroy);
         _input.Player.RightButton.performed += ctx => RightClick();
+        _input.Player.SkipCutscene.performed += ctx => SkipCutscene();
+        _input.Player.Pause.performed += ctx => PauseGame();
+        _input.Player.Restart.performed += ctx => Restart();
     }
     private void OnDisable() {
         _input.Player.Disable();
@@ -68,11 +83,29 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void Restart()
+    {
+        if (GameManager._gameFinished)
+        {
+            GameManager.Instance.RestartGame();
+        }
+    }
+
     private void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Invisible_Wall") && _dreamsMessageWorked)
         {
             _dreamsMessageWorked = false;
         }
+    }
+
+    private void PauseGame()
+    {
+        GameManager.Instance.TogglePauseGame();
+    }
+
+    private void SkipCutscene()
+    {
+        GameManager.Instance.SkipCutscene();
     }
 
     public UpgradeTiers GetCurrentUpgradeTier()
@@ -107,6 +140,11 @@ public class Player : MonoBehaviour
         RaycastInfo();
         UpdateMoney();
         UpdatePearls();
+
+        if (_throwCooldown < 1f)
+        {
+            _throwCooldown += Time.deltaTime;
+        }
     }
 
     public void CollectItem(CollectiblesType type, int amount)
@@ -139,15 +177,35 @@ public class Player : MonoBehaviour
 
     private void RightClick()
     {
+        if (GameManager._isCutscenePlaying) return;
+
         if (_currentMode != Modes.Normal)
         {
             ChangePlayerMode(Modes.Normal);
+        } else
+        {
+            ThrowRock();
         }
+    }
+
+    private void ThrowRock()
+    {
+        if (_throwCooldown < 1f) return;
+        _throwCooldown = 0f;
+
+        GameObject rock = Instantiate(_rockPrefab, _throwPoint.position, Quaternion.identity);
+
+        Rigidbody rb = rock.GetComponent<Rigidbody>();
+
+        rb.AddForce(_playerCamera.transform.forward * _throwForce, ForceMode.Impulse );
+        _rockThrowSFX.Play();
     }
 
 
     private void ChangePlayerMode(Modes newMode)
     {
+        if (GameManager._isCutscenePlaying) return;
+
         if (_currentMode == newMode && newMode != Modes.Normal)
         {newMode = Modes.Normal;}
         _currentMode = newMode;
@@ -215,6 +273,8 @@ public class Player : MonoBehaviour
 
     private void RaycastInfo()
     {
+        if (GameManager._isCutscenePlaying) return;
+
         Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
         
         if (_currentMode == Modes.Build)
@@ -249,6 +309,7 @@ public class Player : MonoBehaviour
             else
             {
                 HighlightObject(null);
+                UIManager.Instance.CrosshairSet(CrosshairType.Default);
             }
         }
     }
@@ -315,6 +376,8 @@ public class Player : MonoBehaviour
     }
     private void RaycastInteract()
     {
+        if (GameManager._isCutscenePlaying) return;
+
         Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
         RaycastHit hit;
         
@@ -351,6 +414,7 @@ public class Player : MonoBehaviour
                 {
                     Instantiate(_realTurretPrefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal));
                     _money -= _definition.tiers[0].cost;
+                    AudioManager.Instance.PlaySFX(_turretBuild);
                 }else
                 {
                     UIManager.Instance.NotificationPopUp("Not Enough money", new Color(0.9900868f, 0.990566f, 0.8083392f));
@@ -374,6 +438,7 @@ public class Player : MonoBehaviour
                     {
                         int refundAmount = turret.GetSellAmount();
                         _money += refundAmount;
+                        AudioManager.Instance.PlaySFX(_turretDestroy);
                         Destroy(turret.gameObject);
                     }
             }
@@ -423,6 +488,7 @@ public class Player : MonoBehaviour
                     if (_money >= cost)
                     {
                         _money -= cost;
+                        AudioManager.Instance.PlaySFX(_turretUpgrade);
                         upgradable.Upgrade();
                     }
                     else

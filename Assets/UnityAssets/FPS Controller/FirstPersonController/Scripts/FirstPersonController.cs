@@ -71,9 +71,19 @@ namespace StarterAssets
 		private CharacterController _controller;
 		private StarterAssetsInputs _input;
 		private GameObject _mainCamera;
-		private bool _playerInputEnabled = true;
+		private bool _playerInputEnabled = false;
 
 		private const float _threshold = 0.01f;
+
+		[Header("Footsteps")]
+		[SerializeField] private AudioSource _footstepSource;
+		[SerializeField] private AudioClip[] _grassClips;
+		[SerializeField] private AudioClip[] _woodClips;
+		[SerializeField] private AudioClip[] _defaultClips;
+		[SerializeField] private float _walkStepRate = 0.5f;
+		[SerializeField] private float _runStepRate = 0.35f;
+		[SerializeField] private float _footstepRayDistance = 1.6f;
+		private float _footstepTimer = 0f;
 
 		private bool IsCurrentDeviceMouse
 		{
@@ -120,12 +130,57 @@ namespace StarterAssets
 
 		private void LateUpdate()
 		{
+			if (!_playerInputEnabled || GameManager._isCutscenePlaying) return;
 			CameraRotation();
 		}
 
-		public void TogglePlayerinput()
+		private void PlayFootstep()
 		{
-			_playerInputEnabled = !_playerInputEnabled;
+			if (!Grounded) return;
+
+			if (_footstepSource == null) return;
+
+			AudioClip clip = GetFootstepClip();
+			if (clip == null) return;
+
+			_footstepSource.pitch = Random.Range(0.9f, 1.1f);
+			_footstepSource.volume = Random.Range(0.1f, 0.2f);
+
+			_footstepSource.PlayOneShot(clip);
+		}
+
+		private AudioClip GetFootstepClip()
+		{
+			RaycastHit hit;
+			if (!Physics.Raycast(transform.position, Vector3.down, out hit, _footstepRayDistance))
+			{
+				Debug.Log("def");
+				return _defaultClips.Length > 0 ? _defaultClips[Random.Range(0, _defaultClips.Length)] : null;
+			}
+
+			string tag = hit.collider.tag;
+
+			switch (tag)
+			{
+				case "Grass":
+					if (_grassClips.Length > 0)
+						return _grassClips[Random.Range(0, _grassClips.Length)];
+						Debug.Log("grass");
+					break;
+
+				case "Wood":
+					if (_woodClips.Length > 0)
+						return _woodClips[Random.Range(0, _woodClips.Length)];
+					break;
+			}
+			return _defaultClips.Length > 0 ? _defaultClips[Random.Range(0, _defaultClips.Length)] : null;
+		}
+
+
+
+		public void TogglePlayerinput(bool state)
+		{
+			_playerInputEnabled = state;
 		}
 
 		private void GroundedCheck()
@@ -204,7 +259,28 @@ namespace StarterAssets
 
 			// move the player
 			_controller.Move(inputDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+
+			HandleFootsteps();
 		}
+
+		private void HandleFootsteps()
+		{
+			if (!_playerInputEnabled) return;
+			if (!Grounded) return;
+
+			Vector3 horizontalVelocity = new Vector3(_controller.velocity.x, 0f, _controller.velocity.z);
+			if (horizontalVelocity.magnitude < 0.1f) return;
+
+			float stepRate = _input.sprint ? _runStepRate : _walkStepRate;
+
+			_footstepTimer -= Time.deltaTime;
+			if (_footstepTimer <= 0f)
+			{
+				PlayFootstep();
+				_footstepTimer = stepRate;
+			}
+		}
+
 
 		private void JumpAndGravity()
 		{
@@ -253,6 +329,8 @@ namespace StarterAssets
 				_verticalVelocity += Gravity * Time.deltaTime;
 			}
 		}
+
+
 
 		private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
 		{

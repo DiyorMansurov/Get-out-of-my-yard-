@@ -5,8 +5,9 @@ using UnityEngine;
 public class Door : MonoBehaviour, IInteractable, IHighlightable, ICrosshairTarget
 {
     private Outline outline;
-    private bool IsOpened = false;
+    private bool IsOpened = true;
     private bool isRotating = false;
+    [SerializeField] private AudioSource _sfxSource;
 
     private void Awake()
     {
@@ -21,7 +22,14 @@ public class Door : MonoBehaviour, IInteractable, IHighlightable, ICrosshairTarg
         StartCoroutine(RotateDoor(targetZ));
 
         IsOpened = !IsOpened;
+
+        PlaySFX();
         
+    }
+
+    private void PlaySFX()
+    {
+        _sfxSource.Play();
     }
 
     private IEnumerator RotateDoor(float targetZ)

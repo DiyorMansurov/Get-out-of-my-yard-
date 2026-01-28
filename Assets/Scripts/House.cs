@@ -4,14 +4,16 @@ using UnityEngine;
 
 public class House : MonoBehaviour
 {
-    [SerializeField] private int health = 100;
-
+    [SerializeField] private int _health = 100;
+    [SerializeField] private GameObject _explosionVFX;
+    [SerializeField] private AudioSource _explosionSFX;
+    
     public void TakeDamage(int damage)
     {
-        health -= damage;
-        UIManager.Instance.RefreshSlider(health);
+        _health -= damage;
+        UIManager.Instance.RefreshSlider(_health);
         UIManager.Instance.HouseAnim();
-        if (health <= 0)
+        if (_health <= 0)
         {
             DestroyHouse();
         }
@@ -19,6 +21,9 @@ public class House : MonoBehaviour
 
     private void DestroyHouse()
     {
+        Instantiate(_explosionVFX, transform.position, Quaternion.identity);
+        _explosionSFX.Play();
+        UIManager.Instance.LoseSequence();
         Destroy(transform.parent.gameObject);
     }
 }
