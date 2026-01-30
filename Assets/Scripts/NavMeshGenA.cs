@@ -1,3 +1,6 @@
+// Original author:
+// https://gist.github.com/druggedhippo/76febb3e1a7375e49ff0180cebcbc0eb
+
 
 using System;
 using System.Collections;
